@@ -7,6 +7,10 @@ import styled from "styled-components";
 import Footer from './components/Footer';
 import Web3 from "web3";
 
+import keccak256 from "keccak256";
+import MerkleTree from "merkletreejs";
+import { whitelistAddresses } from "./components/whitelist";
+
 const truncate = (input, len) =>
   input.length > len ? `${input.substring(0, len)}...` : input;
 
@@ -144,6 +148,12 @@ function App() {
     SHOW_BACKGROUND: false,
   });
 
+  const leaves = whitelistAddresses.map(x => keccak256(x))
+  const tree = new MerkleTree(leaves, keccak256, { sortPairs: true })
+  const buf2hex = x => '0x' + x.toString('hex')
+
+  console.log(buf2hex(tree.getRoot()))
+
   function isMobileDevice() {
     return 'ontouchstart' in window || 'onmsgesturechange' in window;
   }
@@ -153,13 +163,15 @@ function App() {
     let gasLimit = CONFIG.GAS_LIMIT;
     let totalCostWei = String(cost * mintAmount);
     let totalGasLimit = String(gasLimit * mintAmount);
+    const leaf = keccak256(blockchain.account)
+    const proof = tree.getProof(leaf).map(x => buf2hex(x.data))
     console.log("Cost: ", totalCostWei);
     console.log("Gas limit: ", totalGasLimit);
     setFeedback(`Minting your ${CONFIG.NFT_NAME}...`);
     setClaimingNft(true);
     console.log(blockchain.account)
     blockchain.smartContract.methods
-      .mint(blockchain.account, mintAmount)
+      .mint(blockchain.account, mintAmount, proof)
       .send({
         to: CONFIG.CONTRACT_ADDRESS,
         from: blockchain.account,
