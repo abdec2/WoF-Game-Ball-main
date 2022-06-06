@@ -171,7 +171,7 @@ function App() {
     setClaimingNft(true);
     console.log(blockchain.account)
     blockchain.smartContract.methods
-      .mint(blockchain.account, mintAmount, proof)
+      .mint(mintAmount, proof)
       .send({
         to: CONFIG.CONTRACT_ADDRESS,
         from: blockchain.account,
